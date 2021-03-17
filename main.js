@@ -14,6 +14,7 @@ class Player
         this.list = trackList;
         this.current = 0;
         this.volume = 1;
+        this.isPlaying = false;
     }
 
     play ()
@@ -25,6 +26,8 @@ class Player
         currentTrack.audio.play()
             .then(() => console.log(`Track: ${currentTrack.name} playing... ▶`))
             .catch(() => console.error('Cannot play track'));
+
+        this.isPlaying = true;
     }
 
     pause ()
@@ -35,6 +38,7 @@ class Player
         try {
             currentTrack.audio.pause();
             console.log(`Track: ${currentTrack.name} paused... ⏸`);
+            this.isPlaying = false;
         }
         catch (error) {
             console.error('Cannot pause track', error);
@@ -49,6 +53,7 @@ class Player
         try {
             currentTrack.audio.pause();
             currentTrack.audio.currentTime = 0;
+            this.isPlaying = false;
             console.log(`Track: ${currentTrack.name} stopped... ⏸`);
         } catch (error) {
             console.error('Cannot stop track', error);
@@ -99,8 +104,7 @@ class Player
 const player = new Player();
 
 // Elements
-const playBtn        = document.getElementById('play-btn');
-const pauseBtn       = document.getElementById('pause-btn');
+const playPauseBtn   = document.getElementById('play-pause-btn');
 const nextBtn        = document.getElementById('next-btn');
 const stopBtn        = document.getElementById('stop-btn');
 const previousBtn    = document.getElementById('previous-btn');
@@ -135,8 +139,7 @@ const handleChangeVolume = (action) => () => {
 }
 
 // Events
-playBtn.addEventListener('click',        () => player.play());
-pauseBtn.addEventListener('click',       () => player.pause());
+playPauseBtn.addEventListener('click',   () => player.isPlaying ? player.pause() : player.play());
 stopBtn.addEventListener('click',        () => player.stop());
 nextBtn.addEventListener('click',        () => player.next());
 previousBtn.addEventListener('click',    () => player.previous());
