@@ -15,6 +15,23 @@ class Player
         this.current = 0;
         this.volume = 1;
         this.isPlaying = false;
+        // Tools
+        this.frequencyArray = null;
+        this.analyzer = null;
+    }
+
+    init ()
+    {
+        const audio = this.list[this.current].audio;
+        const context = new AudioContext();
+        this.analyzer = context.createAnalyser();
+        const source = context.createMediaElementSource(audio);
+
+        this.analyzer.fftSize = 2048;
+
+        source.connect(this.analyzer);
+        this.analyzer.connect(context.destination);
+        this.frequencyArray = new Uint8Array(this.analyzer.frequencyBinCount);
     }
 
     play ()
@@ -22,12 +39,16 @@ class Player
         const currentTrack = this.list[this.current];
         if (!currentTrack) return console.warn('Track not found');
 
+        this.init();
+
         currentTrack.audio.volume = this.volume;
         currentTrack.audio.play()
             .then(() => console.log(`Track: ${currentTrack.name} playing... ▶`))
             .catch(() => console.error('Cannot play track'));
 
         this.isPlaying = true;
+
+        drawDancingLine();
     }
 
     pause ()
@@ -112,6 +133,8 @@ const switcherBtn    = document.getElementById('switcher');
 const volumePlusBtn  = document.getElementById('volume-plus');
 const volumeMinusBtn = document.getElementById('volume-minus');
 
+const audioCanvas = document.getElementById('audio-pic');
+
 // Switchers
 let switcher = false;
 
@@ -138,6 +161,11 @@ const handleChangeVolume = (action) => () => {
     player.setVolume(newVolume/10); // 5 to 0.5
 }
 
+// Canvas
+audioCanvas.style.width = '500px';
+audioCanvas.style.height = '100px';
+const ctx = audioCanvas.getContext('2d');
+
 // Events
 playPauseBtn.addEventListener('click',   () => player.isPlaying ? player.pause() : player.play());
 stopBtn.addEventListener('click',        () => player.stop());
@@ -148,3 +176,20 @@ switcherBtn.addEventListener('click',    () => handleSwitch());
 
 volumePlusBtn.addEventListener('click',  handleChangeVolume("plus"));
 volumeMinusBtn.addEventListener('click', handleChangeVolume("minus"));
+
+function drawDancingLine () {
+    if (!player.analyzer) return;
+    player.analyzer.getByteFrequencyData(player.frequencyArray)
+
+    ctx.clearRect(0, 0, 500, 100)
+    ctx.beginPath();
+    player.frequencyArray.forEach((e, i) => {
+        const margin = Math.trunc((500/player.frequencyArray.length)*i);
+        const y = Math.trunc((e / 128.0) * 50);
+        i === 0 && ctx.moveTo(margin, y);
+        ctx.lineTo(margin, y);
+    })
+    ctx.stroke();
+
+    requestAnimationFrame(drawDancingLine);
+}
