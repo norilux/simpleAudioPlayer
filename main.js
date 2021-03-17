@@ -27,7 +27,7 @@ class Player
         this.analyzer = context.createAnalyser();
         const source = context.createMediaElementSource(audio);
 
-        this.analyzer.fftSize = 2048;
+        this.analyzer.fftSize = 256;
 
         source.connect(this.analyzer);
         this.analyzer.connect(context.destination);
