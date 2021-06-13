@@ -1,8 +1,9 @@
 // Tracks
+const createAudio = (path) => new Audio(path);
 const trackList = [
-    { name: 'audio.mp3',  audio: new Audio('music/audio.mp3')  },
-    { name: 'audio2.mp3', audio: new Audio('music/audio2.mp3') },
-    { name: 'audio3.mp3', audio: new Audio('music/audio3.mp3') },
+    { name: 'audio.mp3',  audio: 'music/audio.mp3'},
+    { name: 'audio2.mp3', audio: 'music/audio2.mp3'},
+    { name: 'audio3.mp3', audio: 'music/audio3.mp3'},
 ];
 
 // === === === PLAYER === === ===
@@ -15,17 +16,23 @@ class Player
         this.current = 0;
         this.volume = 1;
         this.isPlaying = false;
+        this.currentAudio = { name: this.list[this.current].name, audio: createAudio(this.list[this.current].audio) };
         // Tools
         this.frequencyArray = null;
         this.analyzer = null;
     }
 
+    updateAudio ()
+    {
+        this.currentAudio.audio = createAudio(this.list[this.current].audio);
+        this.currentAudio.name = this.list[this.current].name;
+    }
+
     init ()
     {
-        const audio = this.list[this.current].audio;
         const context = new AudioContext();
         this.analyzer = context.createAnalyser();
-        const source = context.createMediaElementSource(audio);
+        const source = context.createMediaElementSource(this.currentAudio.audio);
 
         this.analyzer.fftSize = 256;
 
@@ -34,16 +41,19 @@ class Player
         this.frequencyArray = new Uint8Array(this.analyzer.frequencyBinCount);
     }
 
-    play ()
+    /**
+     * @param init { boolean }
+     */
+    play (init)
     {
-        const currentTrack = this.list[this.current];
-        if (!currentTrack) return console.warn('Track not found');
+        if (!this.currentAudio) return console.warn('Track not found');
 
-        this.init();
+        init && this.init();
 
-        currentTrack.audio.volume = this.volume;
-        currentTrack.audio.play()
-            .then(() => console.log(`Track: ${currentTrack.name} playing... ▶`))
+        this.currentAudio.audio.volume = this.volume;
+
+        this.currentAudio.audio.play()
+            .then(() => console.log(`Track: ${this.currentAudio.name} playing... ▶`))
             .catch(() => console.error('Cannot play track'));
 
         this.isPlaying = true;
@@ -53,12 +63,11 @@ class Player
 
     pause ()
     {
-        const currentTrack = this.list[this.current];
-        if (!currentTrack) return console.error('Cannot pause unknown track');
+        if (!this.currentAudio) return console.error('Cannot pause unknown track');
 
         try {
-            currentTrack.audio.pause();
-            console.log(`Track: ${currentTrack.name} paused... ⏸`);
+            this.currentAudio.audio.pause();
+            console.log(`Track: ${this.currentAudio.name} paused... ⏸`);
             this.isPlaying = false;
         }
         catch (error) {
@@ -68,14 +77,13 @@ class Player
 
     stop ()
     {
-        const currentTrack = this.list[this.current];
-        if (!currentTrack) return console.error('Cannot stop unknown track');
+        if (!this.currentAudio) return console.error('Cannot stop unknown track');
 
         try {
-            currentTrack.audio.pause();
-            currentTrack.audio.currentTime = 0;
+            this.currentAudio.audio.pause();
+            this.currentAudio.audio.currentTime = 0;
             this.isPlaying = false;
-            console.log(`Track: ${currentTrack.name} stopped... ⏸`);
+            console.log(`Track: ${this.currentAudio.name} stopped... ⏸`);
         } catch (error) {
             console.error('Cannot stop track', error);
         }
@@ -86,12 +94,18 @@ class Player
         this.stop();
 
         const nextTrackIndex = this.list.length === this.current + 1 ? 0 : this.current + 1;
-        const nextTrack = this.list[nextTrackIndex];
-        if (!nextTrack) return console.error('Cannot find track');
+        if (!this.list[nextTrackIndex]) return console.error('Cannot find track');
+
+        this.currentAudio = {
+            name: this.list[nextTrackIndex].name,
+            audio: this.list[nextTrackIndex].audio,
+        }
 
         this.current = nextTrackIndex;
 
-        this.playAfterSwitch && this.play()
+        this.updateAudio()
+
+        this.playAfterSwitch && this.play(true)
 
         console.log('Switched to next track ⏭')
     }
@@ -101,22 +115,27 @@ class Player
         this.stop();
 
         const nextTrackIndex = this.current === 0 ? this.list.length - 1 : this.current - 1;
-        const nextTrack = this.list[nextTrackIndex];
-        if (!nextTrack) return console.error('Cannot find track');
+        if (!this.list[nextTrackIndex]) return console.error('Cannot find track');
+
+        this.currentAudio = {
+            name: this.list[nextTrackIndex].name,
+            audio: this.list[nextTrackIndex].audio,
+        };
 
         this.current = nextTrackIndex;
 
-        this.playAfterSwitch && this.play()
+        this.updateAudio();
+
+        this.playAfterSwitch && this.play(true)
 
         console.log('Switched to previous track ⏮')
     }
 
     setVolume (volume)
     {
-        const currentTrack = this.list[this.current];
-        if (!currentTrack) return console.error('Cannot change volume in unknown track');
+        if (!this.currentAudio) return console.error('Cannot change volume in unknown track');
 
-        currentTrack.audio.volume = this.volume = volume;
+        this.currentAudio.audio.volume = this.volume = volume;
         console.log(`Switched changed volume to ${volume} 🔊`)
     }
 }
