@@ -204,7 +204,7 @@ function drawDancingLine () {
     ctx.beginPath();
     player.frequencyArray.forEach((e, i) => {
         const margin = Math.trunc((500/player.frequencyArray.length)*i);
-        const y = 500 - Math.trunc((e / 128.0) * 50);
+        const y = 100 - Math.trunc((e / 128.0) * 50);
         i === 0 && ctx.moveTo(margin, y);
         ctx.lineTo(margin, y);
     })
