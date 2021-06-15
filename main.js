@@ -208,6 +208,7 @@ function drawDancingLine () {
         i === 0 && ctx.moveTo(margin, y);
         ctx.lineTo(margin, y);
     })
+    ctx.lineCap = 'round';
     ctx.stroke();
 
     requestAnimationFrame(drawDancingLine);
